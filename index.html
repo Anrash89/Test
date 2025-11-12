@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Школа Фокусов Романа Magic 🃏 | Рулетка призов</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&family=Rubik+Marker+Hatch&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root{
+      --primary:#f39c12; --secondary:#3498db; --accent:#e74c3c;
+      --card-shadow:0 10px 25px rgba(0,0,0,.25);
+      --bg:#fafbff;
+      --text:#222;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Nunito',system-ui,Segoe UI,Arial;
+      color:var(--text);
+      background:radial-gradient(1200px 600px at 50% -10%, #fff 0%, #eef3ff 40%, #e9edf7 70%, #dde3f7 100%);
+      min-height:100vh; display:flex; flex-direction:column;
+    }
+    header{background:var(--primary);color:#fff;text-align:center;padding:16px 10px;box-shadow:0 4px 18px rgba(0,0,0,.2)}
+    header h1{font-family:'Bungee Inline',cursive;letter-spacing:.5px;text-shadow:2px 2px 0 #c0392b}
+    main{width:100%;max-width:980px;margin:0 auto;padding:18px}
+
+    /* ===== ROULETTE CARD ===== */
+    .roulette-card{
+      display:grid;grid-template-columns:1fr;gap:18px;align-items:center;
+      background:#fff;border-radius:18px;box-shadow:var(--card-shadow);padding:18px
+    }
+    @media(min-width:900px){ .roulette-card{ grid-template-columns:520px 1fr; padding:24px }}
+    .wheel-wrap{position:relative;display:flex;justify-content:center;align-items:center;padding:6px}
+    .wheel{
+      width:480px; height:480px; max-width:100%;
+      border-radius:50%; background:#10131a; position:relative;
+      box-shadow:inset 0 0 0 10px #1f2433, inset 0 0 0 14px #0b0e15, 0 20px 50px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .pointer{
+      position:absolute; top:-8px; left:50%; transform:translateX(-50%);
+      width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:28px solid #fff;
+      filter:drop-shadow(0 6px 8px rgba(0,0,0,.35)); z-index:5;
+    }
+    canvas{display:block;width:100%;height:100%}
+    .controls{display:grid;gap:12px}
+    .controls h2{font-family:'Rubik Marker Hatch',cursive;color:var(--secondary);font-size:1.8rem}
+    .btn{
+      background:linear-gradient(180deg,#ffd06a 0%, #f39c12 60%, #e08400 100%);
+      color:#111;border:none;border-radius:12px;padding:14px 18px;font-weight:900;
+      cursor:pointer;box-shadow:0 8px 18px rgba(243,156,18,.45); transition:.15s; font-size:1.07rem;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;filter:grayscale(.2)}
+    .btn-secondary{
+      background:linear-gradient(180deg,#72b8ff 0%, #3498db 60%, #1d6fa5 100%);
+      color:#fff;box-shadow:0 8px 18px rgba(52,152,219,.45)
+    }
+    .note{font-size:.95rem;line-height:1.45;background:#f8fbff;border:1px dashed #d6e6ff;padding:10px 12px;border-radius:10px}
+    .stats{display:flex;gap:12px;flex-wrap:wrap}
+    .pill{background:#111;color:#fff;border-radius:999px;padding:8px 12px;font-weight:800;font-size:.95rem}
+    .pill.sub{background:#1abc9c}
+    .pill.spins{background:#8e44ad}
+    .prob{font-size:.9rem;color:#5c667a}
+    .prize-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .badge{padding:6px 10px;border-radius:999px;background:#f0f3ff;border:1px solid #dfe6ff;font-weight:700;font-size:.88rem}
+    .badge.red{background:#ffe9e9;border-color:#ffd0d0;color:#b10000}
+    .vip-card{
+      margin-top:16px;background:#0f1220;color:#fff;border-radius:14px;padding:14px 16px;box-shadow:inset 0 0 80px rgba(255,255,255,.05);
+    }
+    .vip-card h3{margin-bottom:8px;font-size:1.1rem}
+    .vip-card ul{margin-left:18px;margin-top:6px}
+    .vip-card li{margin:4px 0}
+    .hidden{display:none !important}
+  </style>
+</head>
+<body>
+<header><h1>Школа Фокусов Романа Magic 🃏</h1></header>
+<main>
+
+  <!-- ======= Блок «Рулетка» ======= -->
+  <section id="roulette" class="roulette-card">
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <div class="wheel"><canvas id="wheelCanvas" width="1000" height="1000"></canvas></div>
+    </div>
+
+    <div class="controls">
+      <h2>🎰 Тайник — VIP-рулетка</h2>
+
+      <div class="stats">
+        <span id="pill-sub" class="pill sub hidden">Подписка активна: 2 крутки/день</span>
+        <span id="pill-spins" class="pill spins">Доступно круток: <b id="spinsLeft">0</b></span>
+      </div>
+
+      <button id="spinBtn" class="btn">Крутить рулетку</button>
+      <button id="subscribeBtn" class="btn btn-secondary">Оформить подписку — 299 ₽/мес</button>
+
+      <div class="note">
+        Рулетка доступна <b>только участникам из Telegram</b> (включает реферальные крутки).  
+        <br/>Бонус: пригласи друга в бота по своей ссылке — получи <b>+1 крутку</b>, когда он сделает свою первую прокрутку.
+      </div>
+
+      <div class="prob">
+        Шансы: 
+        <div class="prize-badges">
+          <span class="badge">🎁 –5% (25%)</span>
+          <span class="badge">🎁 –15% (10%)</span>
+          <span class="badge">🎁 –25% (5%)</span>
+          <span class="badge">🎧 Наушники (1%)</span>
+          <span class="badge">🔊 JBL (1%)</span>
+          <span class="badge red">🎮 PlayStation (0.01%)</span>
+          <span class="badge red">📱 iPhone (0.01%)</span>
+          <span class="badge">∅ Пусто (57.98%)</span>
+        </div>
+      </div>
+
+      <div class="vip-card">
+        <h3>🔒 Закрытый канал «Тайник» — что внутри?</h3>
+        <ul>
+          <li>Секреты фокусов и краткие обучалки, которые не выкладываются публично.</li>
+          <li>Личное общение со мной: отвечаю на видео ваших трюков, даю советы.</li>
+          <li>Челленджи и мини-задания — выкладывайте видосы, получайте разбор.</li>
+          <li>Ежемесячные розыгрыши призов для активных участников.</li>
+        </ul>
+      </div>
+
+      <div id="resultBox" class="note hidden"></div>
+    </div>
+  </section>
+
+  <!-- Можно оставить ваши секции уроков ниже -->
+</main>
+
+<script>
+/* ========================== НАСТРОЙКИ ========================== */
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby2R4j1aBQ2zmybXyqjVhgFntoduCYYX6AuZ8kMmRUWdF8ZQCNTTpPij0kmxaSxAZmjvg/exec';
+// Prodamus: создайте товар «Подписка Тайник 299 ₽/мес» → Страница оплаты → укажите redirect URL вида:
+// https://ВАШ_САЙТ/?sub=1&tg_id={telegram_user_id}
+// Временно поставим плейсхолдер:
+const PRODAMUS_PAY_URL_BASE = 'https://pay.your-prodamus.example/subscribe-299'; // Замените на вашу ссылку
+
+/* ======================= ТЕЛЕГРАМ / КОНТЕКСТ ==================== */
+function getTelegramId(){
+  if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user){
+    return String(Telegram.WebApp.initDataUnsafe.user.id);
+  }
+  const url = new URL(location.href);
+  const tg = url.searchParams.get('tg_id');
+  const ls = localStorage.getItem('magic_tg_id');
+  if (tg){ localStorage.setItem('magic_tg_id', tg); return tg; }
+  return ls || null;
+}
+/* Реферал: если открытие по ?ref=123, запомним, а при первой прокрутке отправим на сервер */
+function getReferrerFromUrl(){
+  const url = new URL(location.href);
+  const ref = url.searchParams.get('ref');
+  if (ref){ localStorage.setItem('magic_referrer', ref); }
+  return localStorage.getItem('magic_referrer');
+}
+
+/* ========================= ПОДПИСКА ============================ */
+function hasActiveSubscription(){
+  return localStorage.getItem('magic_sub_active') === '1';
+}
+function setSubscriptionActive(active){
+  localStorage.setItem('magic_sub_active', active ? '1':'0');
+  document.getElementById('pill-sub').classList.toggle('hidden', !active);
+}
+
+/* Если after-pay редирект */
+(function handlePostPay(){
+  const url = new URL(location.href);
+  if (url.searchParams.get('sub') === '1'){ setSubscriptionActive(true); }
+})();
+
+/* ========================= ЛИМИТЫ КРУТОК ======================= */
+function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function getDailyLimit(){ return hasActiveSubscription()?2:1; }
+function loadSpinState(){
+  const key = todayKey();
+  const data = JSON.parse(localStorage.getItem('magic_spin_state')||'{}');
+  if (data.date !== key){ return {date:key, used:0, bonus: Number(localStorage.getItem('magic_bonus_pool')||'0')}; }
+  return data;
+}
+function saveSpinState(st){
+  localStorage.setItem('magic_spin_state', JSON.stringify(st));
+  localStorage.setItem('magic_bonus_pool', String(st.bonus||0));
+  updateSpinsUI();
+}
+function addBonusSpin(n=1){
+  const st = loadSpinState(); st.bonus = (st.bonus||0)+n; saveSpinState(st);
+}
+
+/* Сколько осталось */
+function spinsLeft(){
+  const st=loadSpinState();
+  return Math.max(0, getDailyLimit() - st.used) + (st.bonus||0);
+}
+function consumeSpin(){
+  const st=loadSpinState();
+  if (st.bonus>0){ st.bonus--; }
+  else { st.used = Math.min(getDailyLimit(), st.used+1); }
+  saveSpinState(st);
+}
+function updateSpinsUI(){
+  document.getElementById('spinsLeft').textContent = spinsLeft();
+  document.getElementById('spinBtn').disabled = (spinsLeft()<=0);
+}
+
+/* ========================= ПРОДАМУС КНОПКА ===================== */
+document.getElementById('subscribeBtn').addEventListener('click', ()=>{
+  const tg = getTelegramId();
+  const url = new URL(PRODAMUS_PAY_URL_BASE);
+  if (tg){ url.searchParams.set('tg_id', tg); }
+  // опционально: url.searchParams.set('redirect', location.origin + location.pathname + '?sub=1&tg_id='+tg);
+  window.open(url.toString(), '_blank');
+});
+
+/* ========================= ПРИЗЫ И ВЕСА ======================== */
+/* Вероятности (в %) суммарно = 100 */
+const prizes = [
+  {key:'empty',     label:'Повезёт в другой раз', emoji:'∅',    weight:57.98, color:'#2e3447'},
+  {key:'off5',      label:'Скидка 5% на вступление',  emoji:'–5%',  weight:25,    color:'#1f7aec'},
+  {key:'off15',     label:'Скидка 15% на вступление', emoji:'–15%', weight:10,    color:'#3dbdff'},
+  {key:'off25',     label:'Скидка 25% на вступление', emoji:'–25%', weight:5,     color:'#59dfa6'},
+  {key:'headphones',label:'Наушники',                 emoji:'🎧',   weight:1,     color:'#9b59b6'},
+  {key:'jbl',       label:'Колонка JBL',              emoji:'🔊',   weight:1,     color:'#e67e22'},
+  {key:'ps',        label:'PlayStation',              emoji:'🎮',   weight:0.01,  color:'#e74c3c'},
+  {key:'iphone',    label:'iPhone',                   emoji:'📱',   weight:0.01,  color:'#c0392b'}
+];
+
+/* ========================= РИСУЕМ КОЛЕСО ======================= */
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const CENTER = canvas.width/2;
+function drawWheel(rotation=0){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const total = prizes.length;
+  const slice = 2*Math.PI/total;
+  ctx.save();
+  ctx.translate(CENTER,CENTER);
+  ctx.rotate(rotation);
+  for(let i=0;i<total;i++){
+    // сектор
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,CENTER-18,i*slice,(i+1)*slice);
+    ctx.closePath();
+    ctx.fillStyle = prizes[i].color;
+    ctx.fill();
+    // разделитель
+    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=6; ctx.stroke();
+
+    // текст
+    ctx.save();
+    ctx.rotate(i*slice + slice/2);
+    ctx.textAlign='center';
+    ctx.fillStyle='#fff';
+    ctx.font='bold 42px Nunito';
+    ctx.fillText(prizes[i].emoji, CENTER*0.63, 16);
+    ctx.font='600 26px Nunito';
+    wrapText(prizes[i].label, CENTER*0.63, 60, 280, 26);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function wrapText(text, x, y, maxWidth, lineHeight){
+  const words=text.split(' '); let line=''; let yy=y;
+  for(let n=0;n<words.length;n++){
+    const test=line+words[n]+' ';
+    if (ctx.measureText(test).width>maxWidth && n>0){
+      ctx.fillText(line, x, yy); line=words[n]+' '; yy+=lineHeight;
+    }else line=test;
+  }
+  ctx.fillText(line, x, yy);
+}
+drawWheel();
+
+/* ==================== ВЫБОР ПО ВЕСАМ + АНИМАЦИЯ ================ */
+function pickPrize(){
+  const r = Math.random()*100; let acc=0;
+  for (const p of prizes){
+    acc += p.weight;
+    if (r <= acc) return p;
+  }
+  return prizes[0]; // fallback
+}
+/* Для анимации попадём на нужный сектор */
+function angleForPrize(prizeIndex){
+  const total = prizes.length;
+  const slice = 2*Math.PI/total;
+  // Указатель сверху (0 рад). Колесо крутится, значит целимся так, чтобы сектор prizeIndex оказался под указателем.
+  const targetAngle = (Math.PI*1.5) - (prizeIndex*slice + slice/2);
+  return targetAngle;
+}
+
+let spinning=false, currentRotation=0;
+function spin(){
+  if (spinning) return;
+  if (spinsLeft()<=0){ showResult('Круток нет. Пригласи друга или оформи подписку.', true); return; }
+
+  spinning=true;
+  const prize = pickPrize();
+  const idx = prizes.findIndex(p=>p.key===prize.key);
+
+  // Количество оборотов + попадание
+  const extraTurns = 6 + Math.floor(Math.random()*3); // 6–8 оборотов
+  const target = angleForPrize(idx) + extraTurns*2*Math.PI;
+
+  const duration = 4500; // мс
+  const start = performance.now();
+  const startRot = currentRotation;
+
+  const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+  function frame(now){
+    const t = Math.min(1, (now - start)/duration);
+    const eased = easeOutCubic(t);
+    const rot = startRot + (target - startRot)*eased;
+    currentRotation = rot;
+    drawWheel(currentRotation);
+    if (t<1){ requestAnimationFrame(frame); }
+    else{
+      spinning=false;
+      onSpinFinished(prize);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ========================= ИТОГ СПИНА ========================== */
+const spinBtn = document.getElementById('spinBtn');
+spinBtn.addEventListener('click', ()=>{
+  // доступ только с tg_id
+  const tg = getTelegramId();
+  if (!tg){ showResult('Рулетка доступна только через Telegram. Откройте мини-приложение бота.', true); return; }
+  spin();
+});
+
+function showResult(text, warn=false){
+  const box = document.getElementById('resultBox');
+  box.textContent = text;
+  box.classList.toggle('hidden', false);
+  box.style.borderColor = warn ? '#ffb3b3' : '#d6e6ff';
+  box.style.background = warn ? '#fff1f1' : '#f8fbff';
+}
+
+async function onSpinFinished(prize){
+  consumeSpin();
+  const tg = getTelegramId();
+  const referrer = localStorage.getItem('magic_referrer'); // если этот юзер пришёл по рефке
+  updateSpinsUI();
+
+  // Сообщение
+  const label = (prize.key==='empty') ? 'Сегодня без приза — попробуйте завтра!' :
+    `Вы выиграли: ${prize.emoji} ${prize.label}`;
+  showResult(label);
+
+  // Отправим на Apps Script: фиксация спина
+  const payload = {
+    action:'spin',
+    tg_id: tg || 'unknown',
+    prize_key: prize.key,
+    prize_label: prize.label,
+    ts: new Date().toISOString(),
+    referrer: referrer || null
+  };
+  fetch(WEB_APP_URL, {
+    method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  }).catch(()=>{});
+
+  /* Логика рефералки (кредитим пригласившему +1 крутку)
+     Реально лучше делать на сервере: когда этот пользователь сделал свой ПЕРВЫЙ спин,
+     сервер находит referrer и начисляет ему бонус.
+     Временный локальный вариант (для теста): если это первая прокрутка за всё время — пингуем сервер экшеном credit_ref.
+  */
+  if (!localStorage.getItem('magic_first_spin_done')){
+    localStorage.setItem('magic_first_spin_done','1');
+    if (referrer){
+      fetch(WEB_APP_URL, {
+        method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'credit_ref', referrer, by: tg || 'unknown', ts:new Date().toISOString()})
+      }).catch(()=>{});
+    }
+  }
+}
+
+/* ========================= ИНИЦИАЛИЗАЦИЯ ======================= */
+(function init(){
+  // сохраним tg
+  const tg = getTelegramId(); if (tg) localStorage.setItem('magic_tg_id', tg);
+  getReferrerFromUrl();
+
+  // если открыли сайт без tg_id — спрячем кнопки, но оставим описание
+  if (!tg){
+    document.getElementById('spinBtn').disabled = true;
+    showResult('Рулетка доступна только из Telegram-бота. Откройте сайт через бота.', true);
+  }
+
+  // показать статус подписки
+  setSubscriptionActive(hasActiveSubscription());
+
+  // если у Prodamus после оплаты вы делаете redirect с ?sub=1 — мы уже активировали выше
+  updateSpinsUI();
+})();
+</script>
+</body>
+</html>
