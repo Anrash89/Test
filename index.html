@@ -19,7 +19,6 @@
 
     main{width:100%;max-width:1080px;margin:0 auto;padding:20px}
 
-    /* ====== STRIP ROULETTE ====== */
     .roulette-card{
       background:linear-gradient(180deg,var(--panel),#0b1020);
       border:1px solid #1f2540;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);
@@ -35,7 +34,7 @@
     }
     .strip{
       display:flex;gap:14px;will-change:transform;transform:translate3d(0,0,0);
-      filter:blur(0px); /* динамически меняется при быстром старте */
+      filter:blur(0px);
     }
     .item{
       flex:0 0 240px;height:140px;
@@ -48,14 +47,10 @@
       content:""; position:absolute; inset:0; background:radial-gradient(180px 90px at 70% 25%, rgba(255,255,255,.08), transparent 60%);
       pointer-events:none;
     }
-    .item .icon{
-      position:absolute; top:16px; left:16px; font-size:30px; opacity:.95
-    }
+    .item .icon{ position:absolute; top:16px; left:16px; font-size:30px; opacity:.95 }
     .item .title{font-weight:800;font-size:14px}
     .item .tag{position:absolute; right:12px; bottom:10px; font-size:12px; color:var(--muted)}
-    .item.highlight{outline:2px solid #26d3a6; box-shadow:0 0 0 3px rgba(38,211,166,.15),0 10px 18px rgba(0,0,0,.35)}
 
-    /* Центр-указатель (стрелки сверху/снизу) */
     .pointerTop,.pointerBottom{
       position:absolute; left:50%; transform:translateX(-50%); width:0;height:0; z-index:10;
       filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));
@@ -86,14 +81,12 @@
 
 <main>
   <section class="roulette-card">
-    <!-- STRIP -->
     <div class="strip-wrap">
       <div class="pointerTop"></div>
       <div class="pointerBottom"></div>
       <div id="strip" class="strip"></div>
     </div>
 
-    <!-- CONTROLS -->
     <div class="controls">
       <h2>🎰 Тайник — VIP-рулетка</h2>
 
@@ -108,7 +101,7 @@
       <div id="resultBox" class="note hidden"><span class="result" id="resultText"></span></div>
 
       <div class="note">
-        Рулетка доступна только участникам из Telegram. Приглашайте друзей — +1 крутка, когда друг сделает свою первую прокрутку.
+        Приглашайте друзей по своей ссылке — +1 крутка, когда друг сделает первую прокрутку.
       </div>
 
       <div class="note">
@@ -121,17 +114,25 @@
 <script>
 /* ========================== НАСТРОЙКИ ========================== */
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby2R4j1aBQ2zmybXyqjVhgFntoduCYYX6AuZ8kMmRUWdF8ZQCNTTpPij0kmxaSxAZmjvg/exec';
-const PRODAMUS_PAY_URL_BASE = 'https://pay.your-prodamus.example/subscribe-299'; // замените на вашу ссылку
+const PRODAMUS_PAY_URL_BASE = 'https://pay.your-prodamus.example/subscribe-299'; // замените на свою ссылку
 
-/* ======================= ТЕЛЕГРАМ / КОНТЕКСТ ==================== */
-function getTelegramId(){
+/* ======================= УНИВЕРСАЛЬНЫЙ UID ===================== */
+/* если есть Telegram — возьмём его; иначе сгенерируем web_* и сохраним */
+function getUserId(){
   if (window.Telegram && Telegram.WebApp?.initDataUnsafe?.user){
-    return String(Telegram.WebApp.initDataUnsafe.user.id);
+    const id = String(Telegram.WebApp.initDataUnsafe.user.id);
+    localStorage.setItem('magic_uid', id);
+    return id;
   }
-  const q = new URL(location.href).searchParams;
-  const tg = q.get('tg_id');
-  if (tg){ localStorage.setItem('magic_tg_id', tg); return tg; }
-  return localStorage.getItem('magic_tg_id');
+  const params = new URL(location.href).searchParams;
+  const given = params.get('uid') || params.get('tg_id') || params.get('user');
+  if (given){ localStorage.setItem('magic_uid', given); return given; }
+  let uid = localStorage.getItem('magic_uid');
+  if (!uid){
+    uid = 'web_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem('magic_uid', uid);
+  }
+  return uid;
 }
 function getReferrerFromUrl(){
   const url = new URL(location.href);
@@ -178,14 +179,13 @@ function updateSpinsUI(){
 
 /* ========================= ПРОДАМУС ============================ */
 document.getElementById('subscribeBtn').addEventListener('click', ()=>{
-  const tg = getTelegramId();
+  const uid = getUserId();
   const url = new URL(PRODAMUS_PAY_URL_BASE);
-  if (tg) url.searchParams.set('tg_id', tg);
+  url.searchParams.set('uid', uid);
   window.open(url.toString(), '_blank');
 });
 
 /* ========================= ПРИЗЫ (ВЕСА) ======================== */
-/* суммарно 100% */
 const prizes = [
   {key:'empty',     label:'Повезёт в другой раз', emoji:'∅',    weight:57.98, color:'#1a2133'},
   {key:'off5',      label:'Скидка 5% на вступление',  emoji:'–5%',  weight:25,   color:'#0f3b75'},
@@ -208,19 +208,15 @@ function createItem(p){
                   <div class="tag">VIP</div>`;
   return el;
 }
-/* делаем большую ленту: повторим призы много раз */
-const REPEAT = 30; // длина дорожки
+const REPEAT = 30;
 const sequence = [];
 for(let r=0;r<REPEAT;r++){ prizes.forEach(p=>sequence.push(p)); }
 sequence.forEach(p => strip.appendChild(createItem(p)));
 
-let ITEM_W = 240 + 14; // ширина + gap (будет обновлена после рендера)
-setTimeout(()=>{ // после layout
+let ITEM_W = 254;
+setTimeout(()=>{
   const first = strip.querySelector('.item');
-  if (first){
-    const style = getComputedStyle(first);
-    ITEM_W = first.getBoundingClientRect().width + parseFloat(getComputedStyle(strip).columnGap||14) || 254;
-  }
+  if (first){ ITEM_W = first.getBoundingClientRect().width + 14; }
 }, 50);
 
 /* ==================== ВЫБОР ПО ВЕСАМ + АНИМАЦИЯ ================ */
@@ -230,48 +226,36 @@ function pickPrize(){
   return prizes[0];
 }
 
-/* прокрутка: start очень быстро + blur, затем плавное замедление */
-let spinning=false, currentX=0; // отрицательное число (влево)
+let spinning=false, currentX=0;
 function spin(){
   if (spinning) return;
   if (spinsLeft()<=0){ showResult('Круток нет. Оформите подписку или пригласите друга.', true); return; }
-
-  const tg = getTelegramId();
-  if (!tg){ showResult('Рулетка доступна только через Telegram-бота.', true); return; }
-
-  spinning = true;
+  spinning=true;
 
   const chosen = pickPrize();
-
-  // найдём индекс подходящего в ближайшем «хвосте», чтобы сделать длинный прогон
   const centerIndex = Math.round(Math.abs(currentX)/ITEM_W) + Math.floor(strip.clientWidth/(2*ITEM_W));
   let targetIndex = -1;
-  for(let i=centerIndex+20; i<sequence.length-10; i++){ // впереди 20+ карточек
+  for(let i=centerIndex+20; i<sequence.length-10; i++){
     if (sequence[i].key === chosen.key){ targetIndex = i; break; }
   }
-  if (targetIndex<0){ targetIndex = centerIndex + 30; } // фолбек
+  if (targetIndex<0){ targetIndex = centerIndex + 30; }
 
   const viewportCenter = strip.clientWidth/2;
   const targetX = -(targetIndex*ITEM_W - viewportCenter + (ITEM_W/2));
 
-  const duration = 5200; // мс
+  const duration = 5200;
   const start = performance.now();
   const startX = currentX;
-
-  // easing out
   const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
 
   function frame(now){
     const t = Math.min(1, (now-start)/duration);
     const eased = easeOutCubic(t);
-
-    // позиция
     currentX = startX + (targetX - startX)*eased;
     strip.style.transform = `translate3d(${currentX}px,0,0)`;
 
-    // «скорость» ~ производная easing -> blur (сначала сильный, потом уменьшается)
-    const speed = 1 - t; // грубо
-    const blur = 12*speed*speed + (t<0.15 ? 8 : 0); // стартовый «супер-размытый»
+    const speed = 1 - t;
+    const blur = 12*speed*speed + (t<0.15 ? 8 : 0); // сначала сильный «размытый» старт
     strip.style.filter = `blur(${blur.toFixed(2)}px)`;
 
     if (t<1){ requestAnimationFrame(frame); }
@@ -303,21 +287,19 @@ async function onSpinFinished(prize){
   const msg = (prize.key==='empty') ? 'Сегодня без приза — попробуйте завтра!' : `Вы выиграли: ${prize.emoji} ${prize.label}`;
   showResult(msg);
 
-  const tg = getTelegramId();
+  const uid = getUserId();
   const referrer = localStorage.getItem('magic_referrer');
-  // лог спина
   fetch(WEB_APP_URL, {
     method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({action:'spin', tg_id: tg||'unknown', prize_key: prize.key, prize_label: prize.label, ts:new Date().toISOString(), referrer: referrer||null})
+    body: JSON.stringify({action:'spin', tg_id: uid, prize_key: prize.key, prize_label: prize.label, ts:new Date().toISOString(), referrer: referrer||null})
   }).catch(()=>{});
 
-  // кредит рефералу при первой прокрутке этого юзера
   if (!localStorage.getItem('magic_first_spin_done')){
     localStorage.setItem('magic_first_spin_done','1');
     if (referrer){
       fetch(WEB_APP_URL, {
         method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({action:'credit_ref', referrer, by: tg||'unknown', ts:new Date().toISOString()})
+        body: JSON.stringify({action:'credit_ref', referrer, by: uid, ts:new Date().toISOString()})
       }).catch(()=>{});
     }
   }
@@ -325,16 +307,10 @@ async function onSpinFinished(prize){
 
 /* ========================= ИНИЦИАЛИЗАЦИЯ ======================= */
 (function init(){
-  const tg=getTelegramId(); if (tg) localStorage.setItem('magic_tg_id', tg);
+  getUserId(); // создаст web_* при необходимости
   getReferrerFromUrl();
   setSubscriptionActive(hasActiveSubscription());
   updateSpinsUI();
-
-  // если нет tg — заблокируем кнопку, но покажем описание
-  if (!tg){
-    document.getElementById('spinBtn').disabled = true;
-    showResult('Откройте рулетку через Telegram-бота, чтобы участвовать.', true);
-  }
 })();
 </script>
 </body>
