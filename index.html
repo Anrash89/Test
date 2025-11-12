@@ -9,149 +9,130 @@
   <style>
     :root{
       --primary:#f39c12; --secondary:#3498db; --accent:#e74c3c;
-      --card-shadow:0 10px 25px rgba(0,0,0,.25);
-      --bg:#fafbff;
-      --text:#222;
+      --bg:#0b0f18; --panel:#111827; --card:#0f1422; --muted:#9aa5b1;
+      --green:#15d198; --ring:#2b3143; --ring2:#1a2032;
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:'Nunito',system-ui,Segoe UI,Arial;
-      color:var(--text);
-      background:radial-gradient(1200px 600px at 50% -10%, #fff 0%, #eef3ff 40%, #e9edf7 70%, #dde3f7 100%);
-      min-height:100vh; display:flex; flex-direction:column;
-    }
-    header{background:var(--primary);color:#fff;text-align:center;padding:16px 10px;box-shadow:0 4px 18px rgba(0,0,0,.2)}
-    header h1{font-family:'Bungee Inline',cursive;letter-spacing:.5px;text-shadow:2px 2px 0 #c0392b}
-    main{width:100%;max-width:980px;margin:0 auto;padding:18px}
+    body{font-family:'Nunito',system-ui,Segoe UI,Arial;background:radial-gradient(1200px 600px at 50% -10%, #0f162a 0%, #0b0f18 60%);color:#e9eef7;min-height:100vh;display:flex;flex-direction:column}
+    header{background:linear-gradient(180deg,#151c2f,#0f1422);border-bottom:1px solid #1e2336;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:16px 10px;text-align:center}
+    header h1{font-family:'Bungee Inline',cursive;color:#fff;text-shadow:0 2px 0 #000}
 
-    /* ===== ROULETTE CARD ===== */
+    main{width:100%;max-width:1080px;margin:0 auto;padding:20px}
+
+    /* ====== STRIP ROULETTE ====== */
     .roulette-card{
-      display:grid;grid-template-columns:1fr;gap:18px;align-items:center;
-      background:#fff;border-radius:18px;box-shadow:var(--card-shadow);padding:18px
+      background:linear-gradient(180deg,var(--panel),#0b1020);
+      border:1px solid #1f2540;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);
+      padding:18px;display:grid;gap:18px
     }
-    @media(min-width:900px){ .roulette-card{ grid-template-columns:520px 1fr; padding:24px }}
-    .wheel-wrap{position:relative;display:flex;justify-content:center;align-items:center;padding:6px}
-    .wheel{
-      width:480px; height:480px; max-width:100%;
-      border-radius:50%; background:#10131a; position:relative;
-      box-shadow:inset 0 0 0 10px #1f2433, inset 0 0 0 14px #0b0e15, 0 20px 50px rgba(0,0,0,.35);
-      overflow:hidden;
+    @media(min-width:900px){ .roulette-card{grid-template-columns:1fr 380px}}
+
+    .strip-wrap{
+      position:relative;overflow:hidden;border-radius:14px;
+      background:linear-gradient(180deg,#0c1222,#0a0f1d);
+      box-shadow:inset 0 0 0 2px var(--ring),inset 0 0 0 10px var(--ring2);
+      padding:18px;
     }
-    .pointer{
-      position:absolute; top:-8px; left:50%; transform:translateX(-50%);
-      width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:28px solid #fff;
-      filter:drop-shadow(0 6px 8px rgba(0,0,0,.35)); z-index:5;
+    .strip{
+      display:flex;gap:14px;will-change:transform;transform:translate3d(0,0,0);
+      filter:blur(0px); /* динамически меняется при быстром старте */
     }
-    canvas{display:block;width:100%;height:100%}
+    .item{
+      flex:0 0 240px;height:140px;
+      background:linear-gradient(180deg,#0f1424,#0b0f1b); border:1px solid #2a324b;
+      border-radius:14px; position:relative; color:#cdd6e6;
+      display:flex; align-items:flex-end; padding:12px; overflow:hidden;
+      box-shadow:0 10px 18px rgba(0,0,0,.35), inset 0 0 40px rgba(255,255,255,.03);
+    }
+    .item:before{
+      content:""; position:absolute; inset:0; background:radial-gradient(180px 90px at 70% 25%, rgba(255,255,255,.08), transparent 60%);
+      pointer-events:none;
+    }
+    .item .icon{
+      position:absolute; top:16px; left:16px; font-size:30px; opacity:.95
+    }
+    .item .title{font-weight:800;font-size:14px}
+    .item .tag{position:absolute; right:12px; bottom:10px; font-size:12px; color:var(--muted)}
+    .item.highlight{outline:2px solid #26d3a6; box-shadow:0 0 0 3px rgba(38,211,166,.15),0 10px 18px rgba(0,0,0,.35)}
+
+    /* Центр-указатель (стрелки сверху/снизу) */
+    .pointerTop,.pointerBottom{
+      position:absolute; left:50%; transform:translateX(-50%); width:0;height:0; z-index:10;
+      filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));
+    }
+    .pointerTop{ top:6px; border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:18px solid #fff; }
+    .pointerBottom{ bottom:6px; border-left:12px solid transparent;border-right:12px solid transparent;border-top:18px solid #fff; }
+
     .controls{display:grid;gap:12px}
-    .controls h2{font-family:'Rubik Marker Hatch',cursive;color:var(--secondary);font-size:1.8rem}
+    .controls h2{font-family:'Rubik Marker Hatch',cursive;color:#7bc3ff}
     .btn{
-      background:linear-gradient(180deg,#ffd06a 0%, #f39c12 60%, #e08400 100%);
-      color:#111;border:none;border-radius:12px;padding:14px 18px;font-weight:900;
-      cursor:pointer;box-shadow:0 8px 18px rgba(243,156,18,.45); transition:.15s; font-size:1.07rem;
+      border:none;border-radius:12px;padding:14px 18px;font-weight:900;cursor:pointer;font-size:1.02rem;
+      background:linear-gradient(180deg,#ffd06a,#f39c12 60%,#e08400);color:#111;
+      box-shadow:0 10px 20px rgba(243,156,18,.4);transition:.15s
     }
     .btn:hover{transform:translateY(-1px)}
     .btn:disabled{opacity:.55;cursor:not-allowed;filter:grayscale(.2)}
-    .btn-secondary{
-      background:linear-gradient(180deg,#72b8ff 0%, #3498db 60%, #1d6fa5 100%);
-      color:#fff;box-shadow:0 8px 18px rgba(52,152,219,.45)
-    }
-    .note{font-size:.95rem;line-height:1.45;background:#f8fbff;border:1px dashed #d6e6ff;padding:10px 12px;border-radius:10px}
-    .stats{display:flex;gap:12px;flex-wrap:wrap}
-    .pill{background:#111;color:#fff;border-radius:999px;padding:8px 12px;font-weight:800;font-size:.95rem}
-    .pill.sub{background:#1abc9c}
-    .pill.spins{background:#8e44ad}
-    .prob{font-size:.9rem;color:#5c667a}
-    .prize-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-    .badge{padding:6px 10px;border-radius:999px;background:#f0f3ff;border:1px solid #dfe6ff;font-weight:700;font-size:.88rem}
-    .badge.red{background:#ffe9e9;border-color:#ffd0d0;color:#b10000}
-    .vip-card{
-      margin-top:16px;background:#0f1220;color:#fff;border-radius:14px;padding:14px 16px;box-shadow:inset 0 0 80px rgba(255,255,255,.05);
-    }
-    .vip-card h3{margin-bottom:8px;font-size:1.1rem}
-    .vip-card ul{margin-left:18px;margin-top:6px}
-    .vip-card li{margin:4px 0}
+    .btn-secondary{background:linear-gradient(180deg,#72b8ff,#3498db 60%,#1d6fa5);color:#fff;box-shadow:0 10px 20px rgba(52,152,219,.4)}
+    .stats{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{background:#182036;border:1px solid #2b3557;border-radius:999px;padding:8px 12px;font-weight:800;font-size:.95rem;color:#cfe6ff}
+    .pill.sub{background:#102a27;border-color:#1d5b50;color:#8ff5d7}
+    .note{font-size:.95rem;line-height:1.45;background:#0e1529;border:1px dashed #2b3a67;padding:10px 12px;border-radius:10px;color:#c6d1f3}
+    .result{font-weight:800}
     .hidden{display:none !important}
   </style>
 </head>
 <body>
 <header><h1>Школа Фокусов Романа Magic 🃏</h1></header>
-<main>
 
-  <!-- ======= Блок «Рулетка» ======= -->
-  <section id="roulette" class="roulette-card">
-    <div class="wheel-wrap">
-      <div class="pointer"></div>
-      <div class="wheel"><canvas id="wheelCanvas" width="1000" height="1000"></canvas></div>
+<main>
+  <section class="roulette-card">
+    <!-- STRIP -->
+    <div class="strip-wrap">
+      <div class="pointerTop"></div>
+      <div class="pointerBottom"></div>
+      <div id="strip" class="strip"></div>
     </div>
 
+    <!-- CONTROLS -->
     <div class="controls">
       <h2>🎰 Тайник — VIP-рулетка</h2>
 
       <div class="stats">
         <span id="pill-sub" class="pill sub hidden">Подписка активна: 2 крутки/день</span>
-        <span id="pill-spins" class="pill spins">Доступно круток: <b id="spinsLeft">0</b></span>
+        <span class="pill">Доступно круток: <b id="spinsLeft">0</b></span>
       </div>
 
-      <button id="spinBtn" class="btn">Крутить рулетку</button>
+      <button id="spinBtn" class="btn">Крутить</button>
       <button id="subscribeBtn" class="btn btn-secondary">Оформить подписку — 299 ₽/мес</button>
 
+      <div id="resultBox" class="note hidden"><span class="result" id="resultText"></span></div>
+
       <div class="note">
-        Рулетка доступна <b>только участникам из Telegram</b> (включает реферальные крутки).  
-        <br/>Бонус: пригласи друга в бота по своей ссылке — получи <b>+1 крутку</b>, когда он сделает свою первую прокрутку.
+        Рулетка доступна только участникам из Telegram. Приглашайте друзей — +1 крутка, когда друг сделает свою первую прокрутку.
       </div>
 
-      <div class="prob">
-        Шансы: 
-        <div class="prize-badges">
-          <span class="badge">🎁 –5% (25%)</span>
-          <span class="badge">🎁 –15% (10%)</span>
-          <span class="badge">🎁 –25% (5%)</span>
-          <span class="badge">🎧 Наушники (1%)</span>
-          <span class="badge">🔊 JBL (1%)</span>
-          <span class="badge red">🎮 PlayStation (0.01%)</span>
-          <span class="badge red">📱 iPhone (0.01%)</span>
-          <span class="badge">∅ Пусто (57.98%)</span>
-        </div>
+      <div class="note">
+        Закрытый канал «Тайник»: секретные обучалки, разбор ваших видео с фокусами, челленджи, советы и ежемесячные розыгрыши призов.
       </div>
-
-      <div class="vip-card">
-        <h3>🔒 Закрытый канал «Тайник» — что внутри?</h3>
-        <ul>
-          <li>Секреты фокусов и краткие обучалки, которые не выкладываются публично.</li>
-          <li>Личное общение со мной: отвечаю на видео ваших трюков, даю советы.</li>
-          <li>Челленджи и мини-задания — выкладывайте видосы, получайте разбор.</li>
-          <li>Ежемесячные розыгрыши призов для активных участников.</li>
-        </ul>
-      </div>
-
-      <div id="resultBox" class="note hidden"></div>
     </div>
   </section>
-
-  <!-- Можно оставить ваши секции уроков ниже -->
 </main>
 
 <script>
 /* ========================== НАСТРОЙКИ ========================== */
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby2R4j1aBQ2zmybXyqjVhgFntoduCYYX6AuZ8kMmRUWdF8ZQCNTTpPij0kmxaSxAZmjvg/exec';
-// Prodamus: создайте товар «Подписка Тайник 299 ₽/мес» → Страница оплаты → укажите redirect URL вида:
-// https://ВАШ_САЙТ/?sub=1&tg_id={telegram_user_id}
-// Временно поставим плейсхолдер:
-const PRODAMUS_PAY_URL_BASE = 'https://pay.your-prodamus.example/subscribe-299'; // Замените на вашу ссылку
+const PRODAMUS_PAY_URL_BASE = 'https://pay.your-prodamus.example/subscribe-299'; // замените на вашу ссылку
 
 /* ======================= ТЕЛЕГРАМ / КОНТЕКСТ ==================== */
 function getTelegramId(){
-  if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user){
+  if (window.Telegram && Telegram.WebApp?.initDataUnsafe?.user){
     return String(Telegram.WebApp.initDataUnsafe.user.id);
   }
-  const url = new URL(location.href);
-  const tg = url.searchParams.get('tg_id');
-  const ls = localStorage.getItem('magic_tg_id');
+  const q = new URL(location.href).searchParams;
+  const tg = q.get('tg_id');
   if (tg){ localStorage.setItem('magic_tg_id', tg); return tg; }
-  return ls || null;
+  return localStorage.getItem('magic_tg_id');
 }
-/* Реферал: если открытие по ?ref=123, запомним, а при первой прокрутке отправим на сервер */
 function getReferrerFromUrl(){
   const url = new URL(location.href);
   const ref = url.searchParams.get('ref');
@@ -160,27 +141,23 @@ function getReferrerFromUrl(){
 }
 
 /* ========================= ПОДПИСКА ============================ */
-function hasActiveSubscription(){
-  return localStorage.getItem('magic_sub_active') === '1';
-}
+function hasActiveSubscription(){ return localStorage.getItem('magic_sub_active')==='1'; }
 function setSubscriptionActive(active){
-  localStorage.setItem('magic_sub_active', active ? '1':'0');
+  localStorage.setItem('magic_sub_active', active?'1':'0');
   document.getElementById('pill-sub').classList.toggle('hidden', !active);
 }
-
-/* Если after-pay редирект */
-(function handlePostPay(){
+(function postPay(){
   const url = new URL(location.href);
-  if (url.searchParams.get('sub') === '1'){ setSubscriptionActive(true); }
+  if (url.searchParams.get('sub')==='1'){ setSubscriptionActive(true); }
 })();
 
 /* ========================= ЛИМИТЫ КРУТОК ======================= */
 function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function getDailyLimit(){ return hasActiveSubscription()?2:1; }
 function loadSpinState(){
-  const key = todayKey();
-  const data = JSON.parse(localStorage.getItem('magic_spin_state')||'{}');
-  if (data.date !== key){ return {date:key, used:0, bonus: Number(localStorage.getItem('magic_bonus_pool')||'0')}; }
+  const key=todayKey();
+  const data=JSON.parse(localStorage.getItem('magic_spin_state')||'{}');
+  if (data.date!==key){ return {date:key, used:0, bonus:Number(localStorage.getItem('magic_bonus_pool')||'0')}; }
   return data;
 }
 function saveSpinState(st){
@@ -188,19 +165,10 @@ function saveSpinState(st){
   localStorage.setItem('magic_bonus_pool', String(st.bonus||0));
   updateSpinsUI();
 }
-function addBonusSpin(n=1){
-  const st = loadSpinState(); st.bonus = (st.bonus||0)+n; saveSpinState(st);
-}
-
-/* Сколько осталось */
-function spinsLeft(){
-  const st=loadSpinState();
-  return Math.max(0, getDailyLimit() - st.used) + (st.bonus||0);
-}
+function spinsLeft(){ const st=loadSpinState(); return Math.max(0, getDailyLimit()-st.used) + (st.bonus||0); }
 function consumeSpin(){
   const st=loadSpinState();
-  if (st.bonus>0){ st.bonus--; }
-  else { st.used = Math.min(getDailyLimit(), st.used+1); }
+  if (st.bonus>0) st.bonus--; else st.used = Math.min(getDailyLimit(), st.used+1);
   saveSpinState(st);
 }
 function updateSpinsUI(){
@@ -208,180 +176,148 @@ function updateSpinsUI(){
   document.getElementById('spinBtn').disabled = (spinsLeft()<=0);
 }
 
-/* ========================= ПРОДАМУС КНОПКА ===================== */
+/* ========================= ПРОДАМУС ============================ */
 document.getElementById('subscribeBtn').addEventListener('click', ()=>{
   const tg = getTelegramId();
   const url = new URL(PRODAMUS_PAY_URL_BASE);
-  if (tg){ url.searchParams.set('tg_id', tg); }
-  // опционально: url.searchParams.set('redirect', location.origin + location.pathname + '?sub=1&tg_id='+tg);
+  if (tg) url.searchParams.set('tg_id', tg);
   window.open(url.toString(), '_blank');
 });
 
-/* ========================= ПРИЗЫ И ВЕСА ======================== */
-/* Вероятности (в %) суммарно = 100 */
+/* ========================= ПРИЗЫ (ВЕСА) ======================== */
+/* суммарно 100% */
 const prizes = [
-  {key:'empty',     label:'Повезёт в другой раз', emoji:'∅',    weight:57.98, color:'#2e3447'},
-  {key:'off5',      label:'Скидка 5% на вступление',  emoji:'–5%',  weight:25,    color:'#1f7aec'},
-  {key:'off15',     label:'Скидка 15% на вступление', emoji:'–15%', weight:10,    color:'#3dbdff'},
-  {key:'off25',     label:'Скидка 25% на вступление', emoji:'–25%', weight:5,     color:'#59dfa6'},
-  {key:'headphones',label:'Наушники',                 emoji:'🎧',   weight:1,     color:'#9b59b6'},
-  {key:'jbl',       label:'Колонка JBL',              emoji:'🔊',   weight:1,     color:'#e67e22'},
-  {key:'ps',        label:'PlayStation',              emoji:'🎮',   weight:0.01,  color:'#e74c3c'},
-  {key:'iphone',    label:'iPhone',                   emoji:'📱',   weight:0.01,  color:'#c0392b'}
+  {key:'empty',     label:'Повезёт в другой раз', emoji:'∅',    weight:57.98, color:'#1a2133'},
+  {key:'off5',      label:'Скидка 5% на вступление',  emoji:'–5%',  weight:25,   color:'#0f3b75'},
+  {key:'off15',     label:'Скидка 15% на вступление', emoji:'–15%', weight:10,   color:'#1a75c7'},
+  {key:'off25',     label:'Скидка 25% на вступление', emoji:'–25%', weight:5,    color:'#126b52'},
+  {key:'headphones',label:'Наушники',                 emoji:'🎧',   weight:1,    color:'#432a5f'},
+  {key:'jbl',       label:'Колонка JBL',              emoji:'🔊',   weight:1,    color:'#6e3a0f'},
+  {key:'ps',        label:'PlayStation',              emoji:'🎮',   weight:0.01, color:'#5a0c0c'},
+  {key:'iphone',    label:'iPhone',                   emoji:'📱',   weight:0.01, color:'#7a1111'}
 ];
 
-/* ========================= РИСУЕМ КОЛЕСО ======================= */
-const canvas = document.getElementById('wheelCanvas');
-const ctx = canvas.getContext('2d');
-const CENTER = canvas.width/2;
-function drawWheel(rotation=0){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const total = prizes.length;
-  const slice = 2*Math.PI/total;
-  ctx.save();
-  ctx.translate(CENTER,CENTER);
-  ctx.rotate(rotation);
-  for(let i=0;i<total;i++){
-    // сектор
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.arc(0,0,CENTER-18,i*slice,(i+1)*slice);
-    ctx.closePath();
-    ctx.fillStyle = prizes[i].color;
-    ctx.fill();
-    // разделитель
-    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=6; ctx.stroke();
+/* ====================== СБОРКА ЛЕНТЫ КАРТОЧЕК ================== */
+const strip = document.getElementById('strip');
+function createItem(p){
+  const el=document.createElement('div');
+  el.className='item';
+  el.style.background=`linear-gradient(180deg, ${p.color}, #0b0f1b)`;
+  el.innerHTML = `<div class="icon">${p.emoji}</div>
+                  <div class="title">${p.label}</div>
+                  <div class="tag">VIP</div>`;
+  return el;
+}
+/* делаем большую ленту: повторим призы много раз */
+const REPEAT = 30; // длина дорожки
+const sequence = [];
+for(let r=0;r<REPEAT;r++){ prizes.forEach(p=>sequence.push(p)); }
+sequence.forEach(p => strip.appendChild(createItem(p)));
 
-    // текст
-    ctx.save();
-    ctx.rotate(i*slice + slice/2);
-    ctx.textAlign='center';
-    ctx.fillStyle='#fff';
-    ctx.font='bold 42px Nunito';
-    ctx.fillText(prizes[i].emoji, CENTER*0.63, 16);
-    ctx.font='600 26px Nunito';
-    wrapText(prizes[i].label, CENTER*0.63, 60, 280, 26);
-    ctx.restore();
+let ITEM_W = 240 + 14; // ширина + gap (будет обновлена после рендера)
+setTimeout(()=>{ // после layout
+  const first = strip.querySelector('.item');
+  if (first){
+    const style = getComputedStyle(first);
+    ITEM_W = first.getBoundingClientRect().width + parseFloat(getComputedStyle(strip).columnGap||14) || 254;
   }
-  ctx.restore();
-}
-function wrapText(text, x, y, maxWidth, lineHeight){
-  const words=text.split(' '); let line=''; let yy=y;
-  for(let n=0;n<words.length;n++){
-    const test=line+words[n]+' ';
-    if (ctx.measureText(test).width>maxWidth && n>0){
-      ctx.fillText(line, x, yy); line=words[n]+' '; yy+=lineHeight;
-    }else line=test;
-  }
-  ctx.fillText(line, x, yy);
-}
-drawWheel();
+}, 50);
 
 /* ==================== ВЫБОР ПО ВЕСАМ + АНИМАЦИЯ ================ */
 function pickPrize(){
-  const r = Math.random()*100; let acc=0;
-  for (const p of prizes){
-    acc += p.weight;
-    if (r <= acc) return p;
-  }
-  return prizes[0]; // fallback
-}
-/* Для анимации попадём на нужный сектор */
-function angleForPrize(prizeIndex){
-  const total = prizes.length;
-  const slice = 2*Math.PI/total;
-  // Указатель сверху (0 рад). Колесо крутится, значит целимся так, чтобы сектор prizeIndex оказался под указателем.
-  const targetAngle = (Math.PI*1.5) - (prizeIndex*slice + slice/2);
-  return targetAngle;
+  const r=Math.random()*100; let acc=0;
+  for(const p of prizes){ acc+=p.weight; if (r<=acc) return p; }
+  return prizes[0];
 }
 
-let spinning=false, currentRotation=0;
+/* прокрутка: start очень быстро + blur, затем плавное замедление */
+let spinning=false, currentX=0; // отрицательное число (влево)
 function spin(){
   if (spinning) return;
-  if (spinsLeft()<=0){ showResult('Круток нет. Пригласи друга или оформи подписку.', true); return; }
+  if (spinsLeft()<=0){ showResult('Круток нет. Оформите подписку или пригласите друга.', true); return; }
 
-  spinning=true;
-  const prize = pickPrize();
-  const idx = prizes.findIndex(p=>p.key===prize.key);
+  const tg = getTelegramId();
+  if (!tg){ showResult('Рулетка доступна только через Telegram-бота.', true); return; }
 
-  // Количество оборотов + попадание
-  const extraTurns = 6 + Math.floor(Math.random()*3); // 6–8 оборотов
-  const target = angleForPrize(idx) + extraTurns*2*Math.PI;
+  spinning = true;
 
-  const duration = 4500; // мс
+  const chosen = pickPrize();
+
+  // найдём индекс подходящего в ближайшем «хвосте», чтобы сделать длинный прогон
+  const centerIndex = Math.round(Math.abs(currentX)/ITEM_W) + Math.floor(strip.clientWidth/(2*ITEM_W));
+  let targetIndex = -1;
+  for(let i=centerIndex+20; i<sequence.length-10; i++){ // впереди 20+ карточек
+    if (sequence[i].key === chosen.key){ targetIndex = i; break; }
+  }
+  if (targetIndex<0){ targetIndex = centerIndex + 30; } // фолбек
+
+  const viewportCenter = strip.clientWidth/2;
+  const targetX = -(targetIndex*ITEM_W - viewportCenter + (ITEM_W/2));
+
+  const duration = 5200; // мс
   const start = performance.now();
-  const startRot = currentRotation;
+  const startX = currentX;
 
+  // easing out
   const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
 
   function frame(now){
-    const t = Math.min(1, (now - start)/duration);
+    const t = Math.min(1, (now-start)/duration);
     const eased = easeOutCubic(t);
-    const rot = startRot + (target - startRot)*eased;
-    currentRotation = rot;
-    drawWheel(currentRotation);
+
+    // позиция
+    currentX = startX + (targetX - startX)*eased;
+    strip.style.transform = `translate3d(${currentX}px,0,0)`;
+
+    // «скорость» ~ производная easing -> blur (сначала сильный, потом уменьшается)
+    const speed = 1 - t; // грубо
+    const blur = 12*speed*speed + (t<0.15 ? 8 : 0); // стартовый «супер-размытый»
+    strip.style.filter = `blur(${blur.toFixed(2)}px)`;
+
     if (t<1){ requestAnimationFrame(frame); }
     else{
+      strip.style.filter = 'blur(0px)';
       spinning=false;
-      onSpinFinished(prize);
+      onSpinFinished(chosen);
     }
   }
   requestAnimationFrame(frame);
 }
 
 /* ========================= ИТОГ СПИНА ========================== */
-const spinBtn = document.getElementById('spinBtn');
-spinBtn.addEventListener('click', ()=>{
-  // доступ только с tg_id
-  const tg = getTelegramId();
-  if (!tg){ showResult('Рулетка доступна только через Telegram. Откройте мини-приложение бота.', true); return; }
-  spin();
-});
+document.getElementById('spinBtn').addEventListener('click', spin);
 
 function showResult(text, warn=false){
   const box = document.getElementById('resultBox');
-  box.textContent = text;
-  box.classList.toggle('hidden', false);
-  box.style.borderColor = warn ? '#ffb3b3' : '#d6e6ff';
-  box.style.background = warn ? '#fff1f1' : '#f8fbff';
+  const t = document.getElementById('resultText');
+  t.textContent = text;
+  box.classList.remove('hidden');
+  box.style.borderColor = warn ? '#5d1b1b' : '#2b3a67';
+  box.style.background = warn ? '#2a1010' : '#0e1529';
 }
 
 async function onSpinFinished(prize){
   consumeSpin();
-  const tg = getTelegramId();
-  const referrer = localStorage.getItem('magic_referrer'); // если этот юзер пришёл по рефке
   updateSpinsUI();
 
-  // Сообщение
-  const label = (prize.key==='empty') ? 'Сегодня без приза — попробуйте завтра!' :
-    `Вы выиграли: ${prize.emoji} ${prize.label}`;
-  showResult(label);
+  const msg = (prize.key==='empty') ? 'Сегодня без приза — попробуйте завтра!' : `Вы выиграли: ${prize.emoji} ${prize.label}`;
+  showResult(msg);
 
-  // Отправим на Apps Script: фиксация спина
-  const payload = {
-    action:'spin',
-    tg_id: tg || 'unknown',
-    prize_key: prize.key,
-    prize_label: prize.label,
-    ts: new Date().toISOString(),
-    referrer: referrer || null
-  };
+  const tg = getTelegramId();
+  const referrer = localStorage.getItem('magic_referrer');
+  // лог спина
   fetch(WEB_APP_URL, {
     method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
+    body: JSON.stringify({action:'spin', tg_id: tg||'unknown', prize_key: prize.key, prize_label: prize.label, ts:new Date().toISOString(), referrer: referrer||null})
   }).catch(()=>{});
 
-  /* Логика рефералки (кредитим пригласившему +1 крутку)
-     Реально лучше делать на сервере: когда этот пользователь сделал свой ПЕРВЫЙ спин,
-     сервер находит referrer и начисляет ему бонус.
-     Временный локальный вариант (для теста): если это первая прокрутка за всё время — пингуем сервер экшеном credit_ref.
-  */
+  // кредит рефералу при первой прокрутке этого юзера
   if (!localStorage.getItem('magic_first_spin_done')){
     localStorage.setItem('magic_first_spin_done','1');
     if (referrer){
       fetch(WEB_APP_URL, {
         method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({action:'credit_ref', referrer, by: tg || 'unknown', ts:new Date().toISOString()})
+        body: JSON.stringify({action:'credit_ref', referrer, by: tg||'unknown', ts:new Date().toISOString()})
       }).catch(()=>{});
     }
   }
@@ -389,21 +325,16 @@ async function onSpinFinished(prize){
 
 /* ========================= ИНИЦИАЛИЗАЦИЯ ======================= */
 (function init(){
-  // сохраним tg
-  const tg = getTelegramId(); if (tg) localStorage.setItem('magic_tg_id', tg);
+  const tg=getTelegramId(); if (tg) localStorage.setItem('magic_tg_id', tg);
   getReferrerFromUrl();
+  setSubscriptionActive(hasActiveSubscription());
+  updateSpinsUI();
 
-  // если открыли сайт без tg_id — спрячем кнопки, но оставим описание
+  // если нет tg — заблокируем кнопку, но покажем описание
   if (!tg){
     document.getElementById('spinBtn').disabled = true;
-    showResult('Рулетка доступна только из Telegram-бота. Откройте сайт через бота.', true);
+    showResult('Откройте рулетку через Telegram-бота, чтобы участвовать.', true);
   }
-
-  // показать статус подписки
-  setSubscriptionActive(hasActiveSubscription());
-
-  // если у Prodamus после оплаты вы делаете redirect с ?sub=1 — мы уже активировали выше
-  updateSpinsUI();
 })();
 </script>
 </body>
